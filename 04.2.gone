@@ -1,0 +1,206 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"slices"
+	"strings"
+)
+
+func main() {
+	file := "04.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+
+	var table [][]string
+	for _, lineString := range lines {
+		line := strings.Split(lineString, "")
+		table = append(table, line)
+	}
+
+	// fmt.Printf("We'll work with this:\n\n%v\n\n", table)
+	totallyDeleted := 0
+
+	for {
+		x := 0
+		for i, row := range table {
+			for j, spot := range row {
+				if spot == "@" {
+					neighborRolls := 0
+					// fmt.Printf("\nNeighbors for i: %v and j: %v\n\n%v\n\n", i, j, getNeighbors(i, j, len(table)-1, len(row)-1))
+					for _, coordinates := range getNeighbors(i, j, len(table)-1, len(row)-1) {
+						if table[coordinates[0]][coordinates[1]] == "@" {
+							neighborRolls++
+						}
+					}
+
+					if neighborRolls < 4 {
+						x++
+						table[i][j] = "x"
+					}
+				}
+			}
+		}
+
+		fmt.Printf("Number of printable rolls: %v\n", x)
+
+		totallyDeleted += x
+		if x == 0 {
+			break
+		}
+	}
+
+	fmt.Printf("Total deleted rolls: %v\n", totallyDeleted)
+}
+
+func getNeighbors(row, col, maxRows, maxCols int) [][]int {
+	upperRow := row - 1
+	lowerRow := row + 1
+	leftCol := col - 1
+	rightCol := col + 1
+
+	neighbors := [][]int{
+		{upperRow, leftCol}, {upperRow, col}, {upperRow, rightCol},
+		{row, leftCol}, {row, rightCol},
+		{lowerRow, leftCol}, {lowerRow, col}, {lowerRow, rightCol},
+	}
+
+	if row == 0 {
+		neighbors = slices.DeleteFunc(neighbors, func(coordinates []int) bool {
+			return coordinates[0] == row-1
+		})
+		/*
+			// i-1, j-1
+			// i-1, j
+			// i-1, j+1
+			i, j-1
+			i, j+1
+			i+1, j-1
+			i+1, j
+			i+1, j+1
+		*/
+	}
+
+	if row == maxRows {
+		neighbors = slices.DeleteFunc(neighbors, func(coordinates []int) bool {
+			return coordinates[0] == row+1
+		})
+		/*
+			i-1, j-1
+			i-1, j
+			i-1, j+1
+			i, j-1
+			i, j+1
+			// i+1, j-1
+			// i+1, j
+			// i+1, j+1
+		*/
+	}
+
+	if col == 0 {
+		neighbors = slices.DeleteFunc(neighbors, func(coordinates []int) bool {
+			return coordinates[1] == col-1
+		})
+		/*
+			// i-1, j-1
+			i-1, j
+			i-1, j+1
+			// i, j-1
+			i, j+1
+			// i+1, j-1
+			i+1, j
+			i+1, j+1
+		*/
+	}
+
+	if col == maxCols {
+		neighbors = slices.DeleteFunc(neighbors, func(coordinates []int) bool {
+			return coordinates[1] == col+1
+		})
+		/*
+			i-1, j-1
+			i-1, j
+			// i-1, j+1
+			i, j-1
+			// i, j+1
+			i+1, j-1
+			i+1, j
+			// i+1, j+1
+		*/
+	}
+
+	return neighbors
+}
+
+/*
+Az a nagy ötlet, hogy alapból vesszük ezt a 8-as koordináta halmazt:
+
+i-1, j-1
+i-1, j
+i-1, j+1
+i, j-1
+i, j+1
+i+1, j-1
+i+1, j
+i+1, j+1
+
+
+Aztán csak végignézzük ezeket a feltételeket, és ahol valamelyik igaz, ott a listából csak kivonjuk a vonatkozó, adott feltételben tiltott koordináta párokat.
+
+if i == 0 {
+    // i-1, j-1
+    // i-1, j
+    // i-1, j+1
+    i, j-1
+    i, j+1
+    i+1, j-1
+    i+1, j
+    i+1, j+1
+}
+
+if i == maxI {
+    i-1, j-1
+    i-1, j
+    i-1, j+1
+    i, j-1
+    i, j+1
+    // i+1, j-1
+    // i+1, j
+    // i+1, j+1
+}
+
+
+if j == 0 {
+    // i-1, j-1
+    i-1, j
+    i-1, j+1
+    // i, j-1
+    i, j+1
+    // i+1, j-1
+    i+1, j
+    i+1, j+1
+}
+
+
+if j == maxJ {
+    i-1, j-1
+    i-1, j
+    // i-1, j+1
+    i, j-1
+    // i, j+1
+    i+1, j-1
+    i+1, j
+    // i+1, j+1
+}
+
+Aztán a teljes listát visszaadjuk, és majd ezen iterálunk végig a guriga számoláshoz.
+*/

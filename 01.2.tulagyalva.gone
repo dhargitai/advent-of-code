@@ -1,0 +1,294 @@
+package main
+
+import (
+	"fmt"
+	"math"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file := "01.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	current := 50
+	// landedOnZero := 0
+	touchedZero := 0
+
+	for _, command := range lines {
+		direction := string(command[0])
+		steps, err := strconv.Atoi(command[1:])
+
+		if err != nil {
+			fmt.Println("Error converting step number: ", err)
+			return
+		}
+
+		if direction == "L" {
+			steps = steps * -1
+		}
+
+		newCurrent := current + steps
+
+		if current%100 == 0 {
+			touchedZero += distance(steps)
+		} else {
+			currentDistance := distance(current)
+			newDistance := distance(newCurrent)
+			changedSign := (newCurrent < 0 && current > 0) || (newCurrent > 0 && current < 0)
+
+			if changedSign {
+				touchedZero++
+				touchedZero += absInt(currentDistance + newDistance)
+			} else {
+				if newCurrent == 0 {
+					touchedZero++
+				}
+				if currentDistance != newDistance {
+					touchedZero += absInt(currentDistance - newDistance)
+				}
+			}
+
+		}
+
+		current = newCurrent
+	}
+
+	// fmt.Printf("Landed on zero: %v\n", landedOnZero)
+	fmt.Printf("Touched zero: %v\n", touchedZero)
+}
+
+func absInt(number int) int {
+	return int(math.Abs(float64(number)))
+}
+
+func distance(number int) int {
+	return int(math.Floor(math.Abs(float64(number)) / 100))
+}
+
+/*
+
+
+50
+
+L50 -> 50 - 50 = 0          t += 1
+R100 -> 0 + 100 = 100       t += 1
+R200 -> 100 + 200 = 300     t += 3
+L200 -> 300 - 200 = 100     t += 1
+
+
+
+ha 0 => inc
+ha != 0 => (abs(X) / 100)-zal inc
+
+
+
+
+X = current + step
+ha X = 0 => inc
+ha (mod(current % 100) + abs(step)) >= 100  =>  (abs(X) / 100)-zal inc
+
+L50 -> 50 - 50 = 0          t += 1
+R100 -> 0 + 100 = 100       t += 1
+R200 -> 100 + 200 = 300     t += 3
+L200 -> 300 - 200 = 100     t += 1
+
+
+
+
+
+50
+
+L68 -> 50 - 68 = -18
+	kell növelni.
+	miért?
+		mert az abszolútértékük összege nagyobb, mint 100: 50 + 68
+	mennyit?
+		1-et
+	miért 1-et?
+		mert az abszolutértékük összegében csak 1-szer van meg egésszer a 100: 118 / 100 = 1
+
+L30 -> -18 - 30 = -48
+	nem kell növelni.
+	miért?
+		mert az abszolútértékük összege kisebb, mint 100: 50 + 68
+	mennyit?
+		1-et
+	miért 1-et?
+		mert az abszolutértékük összegében csak 1-szer van meg egésszer a 100: 118 / 100 = 1
+
+R48
+L5
+R60
+L55
+L1
+L99
+R14
+L82
+
+
+
+
+120 - 440
+-320 .. -300 .. -200 .. -100 .. 0 .. 100 .. 120
+		[_______________________________]
+						5 ✅
+
+
+555 - 555
+0 .. 100 .. 200 .. 300 .. 400 .. 500 .. 555
+[___________________________________]
+				6 ✅
+
+
+
+-100 + 14 = -86
+-100 .. -86
+     []
+	 0 ✅
+
+
+-5 + 60 = 55
+-5 .. 0 .. 55
+	 [_]
+	  1 ✅
+
+
+
+50 - 50 = 0
+ 0 .. 50
+[____]
+  1 ✅
+
+
+0 + 100 = 100
+0 .. 100
+ [______]
+     1 ✅
+
+
+100 + 200 = 300
+100 .. 200 .. 300
+   [_____________]
+          2 ✅
+
+
+300 - 200 = 100
+ 100 .. 200 .. 300
+[_____________]
+      2 ✅
+
+
+if current % 100 == 0
+	abs(step) / 100
+else
+	(abs(current) / 100) + (abs(current + step) / 100) + 1
+
+
+
+
+
+
+
+ha (current + step) % 100 == 0
+	1 + (abs(step) / 100)
+		120 - 440 = -320 = 5 inc ✅
+		555 - 555 = 0 = 5 inc
+
+
+
+ha current + step == 0:
+	1 + (abs(step) / 100)
+
+else ha current % 100 == 0:
+	abs(step) / 100
+else:
+
+ha elojelet valt:
+	(abs(step) / 100) + 1
+		320 - 490 = -110 	-> abs(490) + 1 = 5 ✅
+
+ha nem valt elojelet:
+	abs( (abs(current) / 100) - (abs(current + step) / 100) )
+
+50
+
+L50 -> 50 - 50 = 0		-> abs((50 / 100) - (100 / 100)) = 1		// mert nem valt elojelet
+R100
+R200
+L200
+
+
+
+
+L68 -> 50 - 68 = -18		-> abs(-18) / 100 + 1 = 1		// mert elojelet valt
+L30 -> -18 - 30 = -48		-> (abs(current) / 100) = abs((18 / 100) - (48 / 100)) = 0		// mert nem valt elojelet
+R48 -> -48 + 48	= 0			-> abs(48) + 1 = 1		// mert elojelet valt
+L5 -> 0 + -5 = -5			-> abs(-5) + 1 = 1		// mert elojelet valt
+R60 -> -5 + 60 = 55			-> abs(60) + 1 = 1		// mert elojelet valt
+L55 -> 55 - 55 = 0			-> (abs(current) / 100) = abs((55 / 100) - (0 / 100)) = 0		// mert nem valt elojelet
+L1 -> 0 - 1 = -1			-> abs(-1) / 100 = 0		// mert current % 100 == 0
+L99 -> -1 - 99 = -100		-> abs((1 / 100) - (100 / 100)) = 1		// mert nem valt elojelet
+R14 -> -100 + 14 = -86		-> abs(14) / 100 = 0		// mert nem valt elojelet
+L82 -> -86 - 82 = -168		-> abs((86 / 100) - (168 / 100)) = 1		// mert nem valt elojelet
+
+
+
+
+
+
+if current % 100 == 0
+	abs(step) / 100
+else
+	if elojelet valt {
+		incWith( 1 )
+
+		if current / 100 != newCurrent / 100 {
+			incWith(abs( current / 100  +  newCurrent / 100 ))
+		}
+	} else {
+		if newCurrent == 0 {
+			incWith( 1 )
+		}
+
+		if current / 100 != newCurrent / 100 {
+			incWith(abs( current / 100  -  newCurrent / 100 ))
+		}
+	}
+
+150 - 300 = -150
+
+150 + 50 = 200			-> else ag: 1
+150 + 49 = 199			-> else ag: 0
+150 + 51 = 201			-> else ag: 1
+
+L68 -> 50 - 68 = -18	-> else ag: 0 + 0 + 1 = 1
+L30 -> -18 - 30 = -48	-> else ag: 0 + 0 + 1 = 1	// ajjjj
+R48 -> -48 + 48	= 0		-> else ag: 0 + 0 + 1 = 1
+L5 -> 0 + -5 = -5		-> if ag: 0
+R60 -> -5 + 60 = 55		-> else ag: 0 + 0 + 1 = 1
+L55 -> 55 - 55 = 0		-> else ag: 0 + 0 + 1 = 1
+L1 -> 0 - 1 = -1		-> if ag: 0
+L99 -> -1 - 99 = -100	-> else ag: 0 + 1 + 1 = 2 // ajjjj
+R14 -> -100 + 14 = -86	-> if ag: 0
+L82 -> -86 - 82 = -168	-> else ag: 0 + 1 + 1 // ajjjj
+
+
+
+
+
+
+
+
+
+*/

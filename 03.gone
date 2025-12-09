@@ -1,0 +1,49 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file := "03.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	banks := strings.Split(strings.TrimSpace(string(data)), "\n")
+	totalOutput := 0
+
+	for _, bank := range banks {
+
+		max := 0
+		// 811111111111119
+		numberOfBatteries := len(bank)
+		for i := 0; i < numberOfBatteries-1; i++ {
+			for j := i + 1; j < numberOfBatteries; j++ {
+				number, err := strconv.Atoi(string(bank[i]) + string(bank[j]))
+				if err != nil {
+					// fmt.Printf("i: %v, j: %v, bank[i]: %v, bank[j]: %v\nrow: %v\n\n", i, j, bank[i], bank[j], bank)
+					fmt.Println("Error converting string to integer", err)
+					return
+				}
+
+				if number > max {
+					max = number
+				}
+			}
+		}
+
+		totalOutput += max
+	}
+
+	fmt.Println("Max joltage: ", totalOutput)
+}

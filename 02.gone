@@ -1,0 +1,49 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file := "02.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	idRanges := strings.Split(string(data), ",")
+
+	invalidSum := 0
+
+	for _, idRange := range idRanges {
+		rangeBoundStrings := strings.Split(idRange, "-")
+
+		min, err := strconv.Atoi(rangeBoundStrings[0])
+		if err != nil {
+			fmt.Println("Error converting lower boundary to int: ", err)
+			return
+		}
+		max, err := strconv.Atoi(rangeBoundStrings[1])
+		if err != nil {
+			fmt.Println("Error converting upper boundary to int: ", err)
+			return
+		}
+
+		for i := min; i <= max; i++ {
+			asString := strconv.Itoa(i)
+			if len(asString)%2 == 0 && asString[:len(asString)/2] == asString[len(asString)/2:] {
+				invalidSum += i
+			}
+		}
+	}
+
+	fmt.Println("Invalids sum: ", invalidSum)
+}

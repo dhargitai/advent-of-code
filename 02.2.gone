@@ -1,0 +1,123 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file := "02.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	idRanges := strings.Split(string(data), ",")
+
+	invalidSum := 0
+
+	for _, idRange := range idRanges {
+		rangeBoundStrings := strings.Split(idRange, "-")
+
+		min, err := strconv.Atoi(rangeBoundStrings[0])
+		if err != nil {
+			fmt.Println("Error converting lower boundary to int: ", err)
+			return
+		}
+		max, err := strconv.Atoi(rangeBoundStrings[1])
+		if err != nil {
+			fmt.Println("Error converting upper boundary to int: ", err)
+			return
+		}
+
+		for i := min; i <= max; i++ {
+			asString := strconv.Itoa(i)
+			isInvalid := false
+			for numberOfPieces := 1; numberOfPieces <= len(asString)/2; numberOfPieces++ {
+				if len(asString)%numberOfPieces == 0 {
+					allAreSame := true
+					for k := numberOfPieces; k < len(asString); k += numberOfPieces {
+						if asString[0:numberOfPieces] != asString[k:k+numberOfPieces] {
+							allAreSame = false
+							break
+						}
+					}
+					if allAreSame {
+						isInvalid = true
+						break
+					}
+				}
+
+				/*
+
+					2 1 2 1 2 1 2 1 2 1
+					0 1 2 3 4 5 6 7 8 9
+
+					j = 1
+					[2] [1] [2] [1] [2] [1] [2] [1] [2] [1]
+
+					if asString[0:numberOfPieces]
+					if asString[0:1]
+					==
+						asString[1:2]
+						asString[2:3]
+						asString[3:4]
+						asString[4:5]
+						asString[5:6]
+						asString[6:7]
+						asString[7:8]
+						asString[8:9]
+						asString[9:10]
+
+					for k := numberOfPieces; k < len(asString); k += numberOfPieces {
+						if asString[0:numberOfPieces] != asString[k:k + numberOfPieces] {}
+					}
+
+
+					j = 2
+					[2 1] [2 1] [2 1] [2 1] [2 1]
+
+
+					if asString[0:2]
+					==
+						asString[2:4]
+						asString[4:6]
+						asString[6:8]
+						asString[8:10]
+
+
+
+					j = 5
+					[2 1 2 2 1] [2 1 2 1 2]
+
+					if asString[0:numberOfPieces]
+					if asString[0:5]
+					==
+						asString[5:10]
+
+				*/
+				/* for k := 0; k < len(asString)-2*numberOfPieces; k += numberOfPieces {
+					if asString[k:k+j] != asString[k+j:k+j+j] {
+						allAreSame = false
+						break
+					}
+				} */
+
+			}
+
+			if isInvalid {
+				fmt.Println("Invalid number: ", i)
+				invalidSum += i
+			}
+		}
+	}
+
+	fmt.Println("Invalids sum: ", invalidSum)
+}

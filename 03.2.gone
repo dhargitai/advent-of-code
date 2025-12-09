@@ -1,0 +1,121 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file := "03.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	banks := strings.Split(strings.TrimSpace(string(data)), "\n")
+	totalOutput := 0
+
+	for _, bank := range banks {
+
+		// numberOfBatteries := len(bank)
+		maxNumberString := ""
+		lastFoundIndex := -1
+		for i := 11; i >= 0; i-- {
+			// legbaloldalibb maximum érték és indexe feljegyzése
+			// [lastFoundIndex + 1 : len(x)-i]
+			max := 0
+			indexOfMax := len(bank) - i
+			for j := lastFoundIndex + 1; j <= len(bank)-i-1; j++ {
+				number, err := strconv.Atoi(string(bank[j]))
+				if err != nil {
+					fmt.Println("Error converting string to integer", err)
+					return
+				}
+
+				if number > max {
+					max = number
+					indexOfMax = j
+				}
+			}
+
+			maxNumberString = maxNumberString + strconv.Itoa(max)
+			lastFoundIndex = indexOfMax
+		}
+
+		/* for i := 0; i < numberOfBatteries-1; i++ {
+			for j := i + 1; j < numberOfBatteries; j++ {
+				number, err := strconv.Atoi(string(bank[i]) + string(bank[j]))
+				if err != nil {
+					fmt.Println("Error converting string to integer", err)
+					return
+				}
+
+				if number > max {
+					max = number
+				}
+			}
+		} */
+
+		maxNumber, err := strconv.Atoi(maxNumberString)
+		if err != nil {
+			fmt.Println("Error converting string to integer", err)
+			return
+		}
+		totalOutput += maxNumber
+	}
+
+	fmt.Println("Max joltage: ", totalOutput)
+}
+
+/*
+
+
+234234234234278
+818181911112111
+
+
+	[  8  1  8  1  8  1  9  1  1  1  1  2  1  1  1  ]
+
+	[0 : len(x)-11] ebben legbaloldalibb maximum keresés: 8, a 0. indexen (lastFoundIndex)
+
+	8
+
+	[lastFoundIndex + 1 : len(x)-10] ebben legbaloldalibb maximum keresés: 8, az 2. indexen (lastFoundIndex)
+
+	88
+
+	[lastFoundIndex + 1 : len(x)-9] ebben legbaloldalibb maximum keresés: 8, az 4. indexen (lastFoundIndex)
+
+	888
+
+	[lastFoundIndex + 1 : len(x)-8] ebben legbaloldalibb maximum keresés: 9, az 6. indexen (lastFoundIndex)
+
+	8889
+
+
+
+
+
+
+
+	[  2  3  4  2  3  4  2  3  4  2  3  4  2  7  8  ]
+	   0  1  2  3  4  5  6  7  8  9  10 11 12 13 14
+
+
+
+select leftmost max of the [:len(x)-11]
+and make a note of its index: 2
+[ 4 ]
+
+
+
+[  3  4  2  3  4  2  3  4  2  7  8  ]
+
+*/

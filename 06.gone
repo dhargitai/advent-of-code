@@ -1,0 +1,71 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"slices"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file := "06.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+
+	var operands [][]int
+	for _, line := range lines[:len(lines)-1] {
+		ints := slices.Collect(func(yield func(int) bool) {
+			for _, operand := range strings.Fields(line) {
+				intOperand, err := strconv.Atoi(string(operand))
+				if err != nil {
+					fmt.Println("Error converting string to int", err)
+					return
+				}
+				if !yield(intOperand) {
+					return
+				}
+			}
+
+		})
+		operands = append(operands, ints)
+	}
+
+	operators := strings.Fields(lines[len(lines)-1])
+	fmt.Println("operators: ", operators)
+
+	grandTotal := 0
+	for columnIndex, operator := range operators {
+		result := operands[0][columnIndex]
+
+		fmt.Println("columnIndex: ", columnIndex)
+		fmt.Println("operands[1:]: ", operands[1:])
+		for operandLineIndex, operandLine := range operands[1:] {
+			fmt.Println("operandLineIndex, operandLine: ", operandLineIndex, operandLine)
+			switch operator {
+			case "+":
+				result += operandLine[columnIndex]
+			case "*":
+				result *= operandLine[columnIndex]
+			}
+		}
+
+		grandTotal += result
+	}
+
+	fmt.Println("The grand total is: ", grandTotal)
+}
+
+/* 123 328  51 64
+ 45 64  387 23
+  6 98  215 314
+*   +   *   + */

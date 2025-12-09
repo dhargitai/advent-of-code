@@ -1,0 +1,97 @@
+package main
+
+import (
+	"cmp"
+	"fmt"
+	"math"
+	"os"
+	"slices"
+	"strconv"
+	"strings"
+)
+
+type Range struct {
+	min     int
+	max     int
+	deleted bool
+}
+
+func main() {
+	file := "05.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	dbParts := strings.Split(strings.TrimSpace(string(data)), "\n\n")
+	rangeStrings := strings.Split(strings.TrimSpace(string(dbParts[0])), "\n")
+	ranges := []Range{}
+
+	for _, idRange := range rangeStrings {
+		rangeBoundStrings := strings.Split(idRange, "-")
+
+		min, err := strconv.Atoi(rangeBoundStrings[0])
+		if err != nil {
+			fmt.Println("Error converting lower boundary to int: ", err)
+			return
+		}
+		max, err := strconv.Atoi(rangeBoundStrings[1])
+		if err != nil {
+			fmt.Println("Error converting upper boundary to int: ", err)
+			return
+		}
+
+		ranges = append(ranges, Range{min, max, false})
+	}
+	slices.SortFunc(ranges, func(a, b Range) int {
+		return cmp.Or(
+			cmp.Compare(a.min, b.min),
+			cmp.Compare(a.max, b.max),
+		)
+	})
+
+	fmt.Println("Original ranges: ", ranges)
+	// fmt.Println("The number of original ranges: ", len(ranges))
+
+	for i := 0; i < len(ranges)-1; i++ {
+
+		// fmt.Println("Current range: ", i, ranges[i])
+
+		if ranges[i].deleted {
+			continue
+		}
+
+		for j := i + 1; j < len(ranges); j++ {
+
+			// fmt.Println("Next range: ", j, ranges[j])
+			if ranges[j].deleted {
+				continue
+			}
+			if ranges[i].max < ranges[j].min {
+				// fmt.Printf("\tCurrent.max %v is lesser than Next.min %v, so we break\n", ranges[i].max, ranges[j].min)
+				break
+			}
+
+			ranges[i].max = int(math.Max(float64(ranges[i].max), float64(ranges[j].max)))
+			// fmt.Printf("\tWe set the bigger value of %v and %v for Current.max, so the new current is %v\n", ranges[i].max, ranges[j].max, ranges[i])
+			ranges[j].deleted = true
+		}
+	}
+
+	numberOfPossibleFreshIngredients := 0
+
+	for _, current := range ranges {
+		if current.deleted {
+			continue
+		}
+		numberOfPossibleFreshIngredients += current.max - current.min + 1
+	}
+
+	fmt.Println("Number of possible fresh ingredients: ", numberOfPossibleFreshIngredients)
+
+}

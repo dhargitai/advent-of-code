@@ -1,0 +1,59 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	file := "01.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	current := 50
+	landedOnZero := 0
+	touchedZero := 0
+
+	for _, command := range lines {
+		direction := string(command[0])
+		steps, err := strconv.Atoi(command[1:])
+		// fmt.Printf("Steps to take: %v\n", steps)
+		if err != nil {
+			fmt.Println("Error converting step number: ", err)
+			return
+		}
+
+		if direction == "L" {
+			steps = steps * -1
+		}
+
+		current += steps
+
+		for current < 0 {
+			current += 100
+			touchedZero++
+		}
+
+		for current >= 100 {
+			current -= 100
+			touchedZero++
+		}
+
+		if current == 0 {
+			landedOnZero++
+		}
+	}
+
+	fmt.Printf("Landed on zero: %v\n", landedOnZero)
+	fmt.Printf("Touched zero: %v\n", touchedZero)
+}

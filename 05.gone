@@ -1,0 +1,238 @@
+/*
+
+3-5
+10-14
+12-18
+16-20
+
+
+vesszuk min, max
+
+for korabbiak, kMin, kMax
+	if min >= kMin && min <= kMax && max > kMax
+		nem vesszuk fel a listaba,
+		kMax = max
+
+	else if min < kMin && max >= kMin && max <= kMax
+		nem vesszuk fel a listaba,
+		kMin = min
+
+	else if min < kMin && max > kMax
+		nem vesszuk fel a listaba,
+		kMin = min
+		kMax = max
+
+	else
+		felvesszuk a listaba
+
+
+vagy inkabb mindet felvesszuk a listaba,
+utana addig megyunk vegig egyesevel a listan, hasonlitva a tobbi intervallumhoz,
+amig olyan lefutas nem lesz, ahol nem talalunk overlapet
+
+
+
+
+vagy...
+tegyuk fel, hogy az intervallumok minimumaik szerint novekvo sorrendbe vannak rendezve
+
+3-5
+10-14
+12-18
+16-20
+25-30
+25-36
+
+ekkor vegigmegyunk egyesevel n-1 -ig, es minden ilyen nezett elemre vegignezzuk a tobbi utana jovot n-ig
+
+	ha max < kMin
+		continue, mert distinct
+
+	max = math.max(max, kMax)
+	delete current element (inner for loop)
+
+
+for i in [0 : len(intervals) - 1] {
+	if intervals[i].deleted {
+		continue
+	}
+
+	for j in [i+1 : len(intervals)] {
+		if deleted {
+			continue
+		}
+		if intervals[i].max < intervals[j].min {
+			break
+		}
+		intervals[i].max := math.max(intervals[i].max, intervals[j].max)
+		intervals[j].deleted = true
+	}
+}
+
+
+0 3-5
+1 10-20
+2 12-18			deleted
+3 16-20 		deleted
+4 25-36  i:4
+5 25-36 		deleted
+
+
+
+distinctsOnly := false
+
+for ; distinctsOnly != true {
+
+	distinctsOnly = true
+
+	for i := 0; i < len(ranges) - 1; i++ {
+
+		min := ranges[i][0]
+		max := ranges[i][0]
+
+		for j := i + 1; j < len(ranges); j++ {
+
+		}
+
+	}
+
+}
+
+
+12-15
+
+	10-14
+	14-18
+	11-22
+	13-14
+	8-10
+
+
+
+
+1
+5
+8
+11
+17
+32
+
+*/
+
+package main
+
+import (
+	"cmp"
+	"fmt"
+	"math"
+	"os"
+	"slices"
+	"strconv"
+	"strings"
+)
+
+type Range struct {
+	min     int
+	max     int
+	deleted bool
+}
+
+func main() {
+	file := "05.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	dbParts := strings.Split(strings.TrimSpace(string(data)), "\n\n")
+	rangeStrings := strings.Split(strings.TrimSpace(string(dbParts[0])), "\n")
+	ranges := []Range{}
+
+	for _, idRange := range rangeStrings {
+		rangeBoundStrings := strings.Split(idRange, "-")
+
+		min, err := strconv.Atoi(rangeBoundStrings[0])
+		if err != nil {
+			fmt.Println("Error converting lower boundary to int: ", err)
+			return
+		}
+		max, err := strconv.Atoi(rangeBoundStrings[1])
+		if err != nil {
+			fmt.Println("Error converting upper boundary to int: ", err)
+			return
+		}
+
+		ranges = append(ranges, Range{min, max, false})
+	}
+	slices.SortFunc(ranges, func(a, b Range) int {
+		return cmp.Or(
+			cmp.Compare(a.min, b.min),
+			cmp.Compare(a.max, b.max),
+		)
+	})
+
+	fmt.Println("Original ranges: ", ranges)
+	// fmt.Println("The number of original ranges: ", len(ranges))
+
+	for i := 0; i < len(ranges)-1; i++ {
+
+		// fmt.Println("Current range: ", i, ranges[i])
+
+		if ranges[i].deleted {
+			continue
+		}
+
+		for j := i + 1; j < len(ranges); j++ {
+
+			// fmt.Println("Next range: ", j, ranges[j])
+			if ranges[j].deleted {
+				continue
+			}
+			if ranges[i].max < ranges[j].min {
+				// fmt.Printf("\tCurrent.max %v is lesser than Next.min %v, so we break\n", ranges[i].max, ranges[j].min)
+				break
+			}
+
+			ranges[i].max = int(math.Max(float64(ranges[i].max), float64(ranges[j].max)))
+			// fmt.Printf("\tWe set the bigger value of %v and %v for Current.max, so the new current is %v\n", ranges[i].max, ranges[j].max, ranges[i])
+			ranges[j].deleted = true
+		}
+	}
+
+	filteredRanges := slices.Collect(func(yield func(Range) bool) {
+		for _, current := range ranges {
+			if current.deleted {
+				continue
+			}
+			if !yield(current) {
+				return
+			}
+		}
+	})
+
+	fmt.Println("The merged ranges: ", filteredRanges)
+
+	ingredients := strings.Split(strings.TrimSpace(string(dbParts[1])), "\n")
+	numberOfFreshIngredients := 0
+	for _, ingredientIdString := range ingredients {
+		ingredientId, err := strconv.Atoi(ingredientIdString)
+		if err != nil {
+			fmt.Println("Error converting ingredientIdString to int: ", err)
+			return
+		}
+
+		for _, freshRange := range filteredRanges {
+			if ingredientId >= freshRange.min && ingredientId <= freshRange.max {
+				numberOfFreshIngredients++
+				break
+			}
+		}
+	}
+
+	fmt.Println("Number of fresh ingredients: ", numberOfFreshIngredients)
+}
