@@ -1,0 +1,166 @@
+package main
+
+import (
+	"container/list"
+	"fmt"
+	"maps"
+	"os"
+	"regexp"
+	"slices"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+type Point struct {
+	row    int
+	column int
+}
+
+type PointInfo struct {
+	neighbors []Point
+	timelines int
+	at        Point
+}
+
+type AdjacencyList map[string]PointInfo
+
+func getKeyForPoint(row, column int) string {
+	return strconv.Itoa(row) + "," + strconv.Itoa(column)
+}
+
+func (list *AdjacencyList) init(where Point) string {
+	key := getKeyForPoint(where.row, where.column)
+	if _, ok := (*list)[key]; !ok {
+		(*list)[key] = PointInfo{neighbors: []Point{}, timelines: 0, at: Point{row: where.row, column: where.column}}
+	}
+	return key
+}
+
+func (list *AdjacencyList) addNeighbor(where, what Point) {
+	key := (*list).init(where)
+
+	if value, ok := (*list)[key]; ok && !slices.Contains(value.neighbors, what) {
+		value.neighbors = append((*list)[key].neighbors, what)
+		(*list)[key] = value
+	}
+}
+
+func (list *AdjacencyList) incrementTimelines(where Point, inc int) {
+	key := (*list).init(where)
+
+	if value, ok := (*list)[key]; ok {
+		value.timelines += inc
+		(*list)[key] = value
+	}
+}
+
+// func (list AdjacencyList) Len() int           { return len(list) }
+// func (list AdjacencyList) Less(i, j int) bool { return p[i].Value < p[j].Value }
+// func (list AdjacencyList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+func main() {
+	file := "07.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+
+	var table [][]string
+	for _, lineString := range lines {
+		line := strings.Split(lineString, "")
+		table = append(table, line)
+	}
+
+	// allSplits := 0
+	// splitterRegex := regexp.MustCompile(`\^`)
+	// splitterRegexLocation := splitterRegex.FindAllString(string(data), -1)
+	// allSplits := len(splitterRegexLocation)
+
+	// rows := len(table)
+	// columns := len(table[0])
+
+	start := regexp.MustCompile(`S`)
+	startLocation := start.FindStringIndex(lines[0])
+	fmt.Println("startLocation: ", startLocation)
+
+	q := list.New()
+	q.PushBack(Point{0, startLocation[0]})
+
+	// adjacencyList := map[string]PointInfo{}
+	adjacencyList := AdjacencyList{
+		getKeyForPoint(0, startLocation[0]): PointInfo{
+			neighbors: []Point{},
+			timelines: 1,
+			at:        Point{0, startLocation[0]},
+		},
+	}
+
+	for q.Len() > 0 {
+		current := q.Front()
+		currentValue := current.Value.(Point)
+
+		var left *Point
+		leftIndex := currentValue.column - 1
+		var right *Point
+		rightIndex := currentValue.column + 1
+
+		for i := currentValue.row + 1; i < len(table); i++ {
+			if (table[i][leftIndex] == "^" || i == len(table)-1) && left == nil {
+				left = &Point{i, leftIndex}
+				adjacencyList.addNeighbor(currentValue, (*left))
+
+				if i < len(table)-1 {
+					q.PushBack(*left)
+				} else {
+					adjacencyList.init(*left)
+				}
+			}
+			if (table[i][rightIndex] == "^" || i == len(table)-1) && right == nil {
+				right = &Point{i, rightIndex}
+				adjacencyList.addNeighbor(currentValue, (*right))
+
+				if i < len(table)-1 {
+					q.PushBack(*right)
+				} else {
+					adjacencyList.init(*right)
+				}
+			}
+			if left != nil && right != nil {
+				break
+			}
+		}
+
+		q.Remove(current)
+	}
+
+	// fmt.Println("adjacencyList: ", adjacencyList)
+
+	pointList := slices.Collect(maps.Values(adjacencyList))
+	sort.Slice(pointList, func(i, j int) bool {
+		return pointList[i].at.row < pointList[j].at.row
+	})
+	// fmt.Println("adjacencyList sorted: ", pointList)
+
+	for _, i := range pointList {
+		for _, j := range i.neighbors {
+			adjacencyList.incrementTimelines(j, adjacencyList[getKeyForPoint(i.at.row, i.at.column)].timelines)
+		}
+	}
+
+	allTimelines := 0
+	for col := range table[len(table)-1] {
+		if point, ok := adjacencyList[getKeyForPoint(len(table)-1, col)]; ok {
+			allTimelines += point.timelines
+		}
+	}
+
+	fmt.Println("allTimelines: ", allTimelines)
+}

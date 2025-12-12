@@ -1,0 +1,126 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
+
+	// "slices"
+	"strconv"
+	// "strings"
+)
+
+/*
+
+Ötlet:
+annyi, ahány splitter van, mínusz azok, amikre igaz az, hogy
+- van felette az oszlopában splitter, és
+- a szomszédos oszlopaiban ő és a felette levő splitter közötti sorokban nincs splitter
+
+mert ezekre igaz az, hogy nem jut sugár
+
+esetleg egy map-ba kigyűjteni őket:
+- kulcsai az oszlopok
+- értéke egy []int tömb, az adott oszlopon belüli sor koordinátákkal csökkenő sorrendben
+
+aztán minden map elemet végignézni, és ahol a tömb többelemű, ott
+for i = 0..utolsó előtti elemig
+	megnézni a szomszédos map kulcsokat, és ha léteznek, akkor végignézni a tömbjüket
+	hogy van-e bennük olyan elem, ami az i. és i+1-edik elem közé esik
+	ha nincs, akkor ezt az elemet nem számoljuk az összes splitbe
+
+	ha map key 0, akkor csak az 1-es keyt vizsgáljuk
+	ha map key len(columns) akkor csak a len(columns)-1-et
+
+*/
+
+func main() {
+	file := "07.input.txt"
+	if len(os.Args) > 1 {
+		file = os.Args[1]
+	}
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Error reading file: ", err)
+		return
+	}
+
+	/*
+		oszloponként végigmegyünk
+		ha splittert talalunk, gyűjtjük
+		ha többedik splittert találunk, akkor azt megjelöljük, hogy az majd vizsgálandó lesz, és eltárolhatjuk hozzá már rögtön az előző és a jelenlegi közötti indexeket, hogy azok között tudjunk majd keresni, plusz hogy hányadik oszlopban van
+		aztán majd ezeket kell csak végigiterálni, és ha igaz rá a feltétel, akkor kivonni őket az össz splitter számból
+	*/
+
+	// splitterRegex := regexp.MustCompile(`\^`)
+	// fmt.Printf("Number of splits: %v\n", len(splitterRegex.FindAll(data, -1))-1)
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+
+	var table [][]string
+	for _, lineString := range lines {
+		line := strings.Split(lineString, "")
+		table = append(table, line)
+	}
+
+	/* rows := len(table)
+	columns := len(table[0])
+
+	for j := 0; j < columns; j++ {
+		previousSplitterIndex := -1
+		currentSplitterIndex := -1
+
+		for i := 0; i < rows; i++ {
+
+			if table[i][j] == "^" {
+
+				if previousSplitterIndex > -1 {
+
+
+
+				} else if previousSplitterIndex == -1 {
+					previousSplitterIndex = i
+				}
+
+			}
+
+		}
+	} */
+
+	// most esik le hogy ez egy rekurziv problema...
+
+	// allSplits := 0
+	start := regexp.MustCompile(`S`)
+	startLocation := start.FindStringIndex(lines[0])
+	splitsAt := map[string]bool{}
+
+	goDown(startLocation[0], 1, &splitsAt, &table)
+
+	// fmt.Println("startColumn: ", startColumn)
+	fmt.Println("All splits: ", len(splitsAt))
+
+}
+
+func goDown(beamColumn, row int, splitsAt *map[string]bool, table *[][]string) {
+	if row == len(*table) {
+		return
+	}
+
+	for ; (*table)[row][beamColumn] != "^"; row++ {
+		if row == len(*table)-1 {
+			return
+		}
+	}
+
+	// fmt.Println("We're incrementing at ", row, beamColumn)
+	(*splitsAt)[strconv.Itoa(row)+"-"+strconv.Itoa(beamColumn)] = true
+
+	if beamColumn > 0 {
+		goDown(beamColumn-1, row+1, splitsAt, table)
+	}
+
+	if beamColumn < len((*table)[0])-1 {
+		goDown(beamColumn+1, row+1, splitsAt, table)
+	}
+}
